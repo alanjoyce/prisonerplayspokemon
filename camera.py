@@ -43,8 +43,8 @@ def pressButton(char):
 			maxKey = lastButton
 		
 		try:
-			#thread.start_new_thread(systemKeystroke, (maxKey, ))
-			systemKeystroke(maxKey)
+			thread.start_new_thread(systemKeystroke, (maxKey, ))
+			#systemKeystroke(maxKey)
 		except:
 			print "Error starting thread"
 		
