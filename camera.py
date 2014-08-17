@@ -16,7 +16,12 @@ lastButton = "u"
 toPress = {}
 
 def systemKeystroke(char):
-	cmd = "osascript -e 'tell application \"System Events\" to keystroke \"" + char + "\"'"
+	cmd = "osascript -e 'tell application \"System Events\" to keystroke \"" + char + "" + char + "" + char + "" + char + "" + char + "\"'"
+	#cmd = "osascript -e 'tell application \"System Events\" to key down \"" + char + "\"'"
+	#os.system(cmd)
+	#cmd = "osascript -e 'tell application \"System Events\" to delay 0.5'"
+	#os.system(cmd)
+	#cmd = "osascript -e 'tell application \"System Events\" to key up \"" + char + "\"'"
 	os.system(cmd)
 
 def pressButton(char):
@@ -24,10 +29,10 @@ def pressButton(char):
 	global lastButton
 	global toPress
 	
-	#Rate limit to 1 press per second
+	#Rate limit to 1 button per half-second
 	#Pick the button with the most motion
 	#If no motion, use the last pressed button
-	if time.time() - lastPress >= 1:
+	if time.time() - lastPress >= 0.5:
 		maxValue = 0
 		maxKey = ""
 		for key, value in toPress.iteritems():
@@ -97,45 +102,76 @@ while(1):
 	if ix > len(pieces) - 1:
 		ix = 0
 	
+	m = 0
 	#Row 1
 	if mov[0][0]:
 		pressButton("a")
 	cv2.rectangle(img, (0,0), (width/3,height/3), (mov[0][0],0,0), 5)
-	cv2.putText(img, "A", (width/6, height/6), cv2.FONT_HERSHEY_PLAIN, 3, 255, 5)
+	if lastButton == "a":
+		m = 255
+	cv2.putText(img, "A", (width/6, height/6), cv2.FONT_HERSHEY_PLAIN, 3, (255,m,0), 5)
+	m = 0
+	
 	if mov[0][1]:
 		pressButton("u")
 	cv2.rectangle(img, (width/3,0), (width*2/3,height/3), (mov[0][1],0,0), 5)
-	cv2.putText(img, "U", (width/2, height/6), cv2.FONT_HERSHEY_PLAIN, 3, 255, 5)
+	if lastButton == "u":
+		m = 255
+	cv2.putText(img, "U", (width/2, height/6), cv2.FONT_HERSHEY_PLAIN, 3, (255,m,0), 5)
+	m = 0
+	
 	if mov[0][2]:
 		pressButton("b")
 	cv2.rectangle(img, (width*2/3,0), (width,height/3), (mov[0][2],0,0), 5)
-	cv2.putText(img, "B", (width*5/6, height/6), cv2.FONT_HERSHEY_PLAIN, 3, 255, 5)
+	if lastButton == "b":
+		m = 255
+	cv2.putText(img, "B", (width*5/6, height/6), cv2.FONT_HERSHEY_PLAIN, 3, (255,m,0), 5)
+	m = 0
 	
 	#Row 2
 	if mov[1][0]:
 		pressButton("l")
 	cv2.rectangle(img, (0,height/3), (width/3,height*2/3), (mov[1][0],0,0), 5)
-	cv2.putText(img, "L", (width/6, height/2), cv2.FONT_HERSHEY_PLAIN, 3, 255, 5)
+	if lastButton == "l":
+		m = 255
+	cv2.putText(img, "L", (width/6, height/2), cv2.FONT_HERSHEY_PLAIN, 3, (255,m,0), 5)
+	m = 0
+	
 	cv2.rectangle(img, (width/3,height/3), (width*2/3,height*2/3), (mov[1][1],0,0), 5)
-	cv2.putText(img, "", (width/2, height/2), cv2.FONT_HERSHEY_PLAIN, 3, 255, 5)
+	cv2.putText(img, "", (width/2, height/2), cv2.FONT_HERSHEY_PLAIN, 3, (255,m,0), 5)
+	
 	if mov[1][2]:
 		pressButton("r")
 	cv2.rectangle(img, (width*2/3,height/3), (width,height*2/3), (mov[1][2],0,0), 5)
-	cv2.putText(img, "R", (width*5/6, height/2), cv2.FONT_HERSHEY_PLAIN, 3, 255, 5)
+	if lastButton == "r":
+		m = 255
+	cv2.putText(img, "R", (width*5/6, height/2), cv2.FONT_HERSHEY_PLAIN, 3, (255,m,0), 5)
+	m = 0
 	
 	#Row 3
 	if mov[2][0]:
 		pressButton("e")
 	cv2.rectangle(img, (0,height*2/3), (width/3,height), (mov[2][0],0,0), 5)
-	cv2.putText(img, "SEL", (width/6, height*5/6), cv2.FONT_HERSHEY_PLAIN, 3, 255, 5)
+	if lastButton == "e":
+		m = 255
+	cv2.putText(img, "SEL", (width/6, height*5/6), cv2.FONT_HERSHEY_PLAIN, 3, (255,m,0), 5)
+	m = 0
+	
 	if mov[2][1]:
 		pressButton("d")
 	cv2.rectangle(img, (width/3,height*2/3), (width*2/3,height), (mov[2][1],0,0), 5)
-	cv2.putText(img, "D", (width/2, height*5/6), cv2.FONT_HERSHEY_PLAIN, 3, 255, 5)
+	if lastButton = "d":
+		m = 255
+	cv2.putText(img, "D", (width/2, height*5/6), cv2.FONT_HERSHEY_PLAIN, 3, (255,m,0), 5)
+	m = 0
+	
 	if mov[2][2]:
 		pressButton("s")
 	cv2.rectangle(img, (width*2/3,height*2/3), (width,height), (mov[2][2],0,0), 5)
-	cv2.putText(img, "ST", (width*5/6, height*5/6), cv2.FONT_HERSHEY_PLAIN, 3, 255, 5)
+	if lastButton == "s":
+		m = 255
+	cv2.putText(img, "ST", (width*5/6, height*5/6), cv2.FONT_HERSHEY_PLAIN, 3, (255,m,0), 5)
+	m = 0
 	
 	pressButton("")
 	
