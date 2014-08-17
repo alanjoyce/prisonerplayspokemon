@@ -160,7 +160,7 @@ while(1):
 	if mov[2][1]:
 		pressButton("d")
 	cv2.rectangle(img, (width/3,height*2/3), (width*2/3,height), (mov[2][1],0,0), 5)
-	if lastButton = "d":
+	if lastButton == "d":
 		m = 255
 	cv2.putText(img, "D", (width/2, height*5/6), cv2.FONT_HERSHEY_PLAIN, 3, (255,m,0), 5)
 	m = 0
