@@ -2,6 +2,8 @@ import cv2
 import numpy as np
 import os
 import time
+from time import sleep
+import thread
 
 c = cv2.VideoCapture(0)
 
@@ -10,18 +12,43 @@ prevPieces = []
 mov = []
 
 lastPress = time.time()
-lastButton = ""
+lastButton = "u"
+toPress = {}
+
+def systemKeystroke(char):
+	cmd = "osascript -e 'tell application \"System Events\" to keystroke \"" + char + "\"'"
+	os.system(cmd)
 
 def pressButton(char):
 	global lastPress
 	global lastButton
+	global toPress
 	
-	#Rate limit to 1 repeated button press per second
-	if (time.time() - lastPress >= 1) or char != lastButton:
-		cmd = "osascript -e 'tell application \"System Events\" to keystroke \"" + char + "\"'"
-		os.system(cmd)
+	#Rate limit to 1 press per second
+	#Pick the button with the most motion
+	#If no motion, use the last pressed button
+	if time.time() - lastPress >= 1:
+		maxValue = 0
+		maxKey = ""
+		for key, value in toPress.iteritems():
+			if value > maxValue:
+				maxKey = key
+		
+		if maxKey == "":
+			maxKey = lastButton
+		
+		try:
+			thread.start_new_thread(systemKeystroke, (maxKey, ))
+		except:
+			print "Error starting thread"
+		
 		lastPress = time.time()
+		lastButton = maxKey
+		toPress = {}
+	elif char != "":
+		toPress[char] = toPress.get(char, 0) + 1
 
+ix = 0
 while(1):
 	img = c.read()[1]
 	height, width, depth = img.shape
@@ -54,7 +81,8 @@ while(1):
 		mov = [[0,0,0],[0,0,0],[0,0,0]]
 	
 	#Check for movement between previousPieces and pieces
-	for i in range(len(pieces)):
+	#Use ix to only process 1/3 of the grid each iteration to save time
+	for i in [ix]:
 		for j in range(len(pieces[0])):
 			d1 = cv2.absdiff(pieces[i][j], prevPieces[i][j])
 			d2 = cv2.absdiff(prevPieces[i][j], prevPrevPieces[i][j])
@@ -65,6 +93,9 @@ while(1):
 				mov[i][j] = 255
 			else:
 				mov[i][j] = 0
+	ix = ix + 1
+	if ix > len(pieces) - 1:
+		ix = 0
 	
 	#Row 1
 	if mov[0][0]:
@@ -105,6 +136,8 @@ while(1):
 		pressButton("s")
 	cv2.rectangle(img, (width*2/3,height*2/3), (width,height), (mov[2][2],0,0), 5)
 	cv2.putText(img, "ST", (width*5/6, height*5/6), cv2.FONT_HERSHEY_PLAIN, 3, 255, 5)
+	
+	pressButton("")
 	
 	#Update previousPieces
 	prevPrevPieces = prevPieces
