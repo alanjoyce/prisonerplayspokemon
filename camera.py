@@ -16,7 +16,7 @@ lastButton = "u"
 toPress = {}
 
 def systemKeystroke(char):
-	cmd = "osascript -e 'tell application \"System Events\" to keystroke \"" + char + "" + char + "" + char + "" + char + "" + char + "\"'"
+	cmd = "osascript -e 'tell application \"System Events\" to keystroke \"" + char + "" + char + "" + char + "" + char + "" + char + "" + char + "" + char + "" + char + "" + char + "" + char + "" + char + "" + char + "\"'"
 	#cmd = "osascript -e 'tell application \"System Events\" to key down \"" + char + "\"'"
 	#os.system(cmd)
 	#cmd = "osascript -e 'tell application \"System Events\" to delay 0.5'"
@@ -43,7 +43,8 @@ def pressButton(char):
 			maxKey = lastButton
 		
 		try:
-			thread.start_new_thread(systemKeystroke, (maxKey, ))
+			#thread.start_new_thread(systemKeystroke, (maxKey, ))
+			systemKeystroke(maxKey)
 		except:
 			print "Error starting thread"
 		
