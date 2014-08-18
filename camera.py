@@ -4,8 +4,9 @@ import os
 import time
 from time import sleep
 import thread
+import autopy
 
-c = cv2.VideoCapture(0)
+c = cv2.VideoCapture(1)
 
 prevPrevPieces = []
 prevPieces = []
@@ -16,13 +17,16 @@ lastButton = "u"
 toPress = {}
 
 def systemKeystroke(char):
-	cmd = "osascript -e 'tell application \"System Events\" to keystroke \"" + char + "" + char + "" + char + "" + char + "" + char + "" + char + "" + char + "" + char + "" + char + "" + char + "" + char + "" + char + "\"'"
+	autopy.key.toggle(char, True)
+	sleep(0.2)
+	autopy.key.toggle(char, False)
+	#cmd = "osascript -e 'tell application \"System Events\" to keystroke \"" + char + "" + char + "" + char + "\"'"
 	#cmd = "osascript -e 'tell application \"System Events\" to key down \"" + char + "\"'"
 	#os.system(cmd)
 	#cmd = "osascript -e 'tell application \"System Events\" to delay 0.5'"
 	#os.system(cmd)
 	#cmd = "osascript -e 'tell application \"System Events\" to key up \"" + char + "\"'"
-	os.system(cmd)
+	#os.system(cmd)
 
 def pressButton(char):
 	global lastPress
@@ -93,7 +97,13 @@ while(1):
 			d1 = cv2.absdiff(pieces[i][j], prevPieces[i][j])
 			d2 = cv2.absdiff(prevPieces[i][j], prevPrevPieces[i][j])
 			result = cv2.bitwise_and(d1, d2)
-			result = cv2.threshold(result, 35, 255, cv2.THRESH_BINARY)[1]
+			
+			#Use a harsher threshold for the tree
+			thresh = 100
+			if i < 2 and j > 0:
+				thresh = 135
+			result = cv2.threshold(result, thresh, 255, cv2.THRESH_BINARY)[1]
+			
 			totalDiff = sum(sum(x) for x in result)
 			if totalDiff > 1000:
 				mov[i][j] = 255
@@ -106,11 +116,11 @@ while(1):
 	m = 0
 	#Row 1
 	if mov[0][0]:
-		pressButton("a")
+		pressButton("")
 	cv2.rectangle(img, (0,0), (width/3,height/3), (mov[0][0],0,0), 5)
-	if lastButton == "a":
+	if lastButton == "":
 		m = 255
-	cv2.putText(img, "A", (width/6, height/6), cv2.FONT_HERSHEY_PLAIN, 3, (255,m,0), 5)
+	cv2.putText(img, "", (width/6, height/6), cv2.FONT_HERSHEY_PLAIN, 3, (255,m,0), 5)
 	m = 0
 	
 	if mov[0][1]:
@@ -122,24 +132,29 @@ while(1):
 	m = 0
 	
 	if mov[0][2]:
-		pressButton("b")
+		pressButton("d")
 	cv2.rectangle(img, (width*2/3,0), (width,height/3), (mov[0][2],0,0), 5)
-	if lastButton == "b":
+	if lastButton == "d":
 		m = 255
-	cv2.putText(img, "B", (width*5/6, height/6), cv2.FONT_HERSHEY_PLAIN, 3, (255,m,0), 5)
+	cv2.putText(img, "D", (width*5/6, height/6), cv2.FONT_HERSHEY_PLAIN, 3, (255,m,0), 5)
 	m = 0
 	
 	#Row 2
 	if mov[1][0]:
-		pressButton("l")
+		pressButton("e")
 	cv2.rectangle(img, (0,height/3), (width/3,height*2/3), (mov[1][0],0,0), 5)
-	if lastButton == "l":
+	if lastButton == "e":
 		m = 255
-	cv2.putText(img, "L", (width/6, height/2), cv2.FONT_HERSHEY_PLAIN, 3, (255,m,0), 5)
+	cv2.putText(img, "SEL", (width/6, height/2), cv2.FONT_HERSHEY_PLAIN, 3, (255,m,0), 5)
 	m = 0
 	
+	if mov[1][1]:
+		pressButton("l")
 	cv2.rectangle(img, (width/3,height/3), (width*2/3,height*2/3), (mov[1][1],0,0), 5)
-	cv2.putText(img, "", (width/2, height/2), cv2.FONT_HERSHEY_PLAIN, 3, (255,m,0), 5)
+	if lastButton == "l":
+		m = 255
+	cv2.putText(img, "L", (width/2, height/2), cv2.FONT_HERSHEY_PLAIN, 3, (255,m,0), 5)
+	m = 0
 	
 	if mov[1][2]:
 		pressButton("r")
@@ -151,19 +166,19 @@ while(1):
 	
 	#Row 3
 	if mov[2][0]:
-		pressButton("e")
+		pressButton("a")
 	cv2.rectangle(img, (0,height*2/3), (width/3,height), (mov[2][0],0,0), 5)
-	if lastButton == "e":
+	if lastButton == "a":
 		m = 255
-	cv2.putText(img, "SEL", (width/6, height*5/6), cv2.FONT_HERSHEY_PLAIN, 3, (255,m,0), 5)
+	cv2.putText(img, "A", (width/6, height*5/6), cv2.FONT_HERSHEY_PLAIN, 3, (255,m,0), 5)
 	m = 0
 	
 	if mov[2][1]:
-		pressButton("d")
+		pressButton("b")
 	cv2.rectangle(img, (width/3,height*2/3), (width*2/3,height), (mov[2][1],0,0), 5)
-	if lastButton == "d":
+	if lastButton == "b":
 		m = 255
-	cv2.putText(img, "D", (width/2, height*5/6), cv2.FONT_HERSHEY_PLAIN, 3, (255,m,0), 5)
+	cv2.putText(img, "B", (width/2, height*5/6), cv2.FONT_HERSHEY_PLAIN, 3, (255,m,0), 5)
 	m = 0
 	
 	if mov[2][2]:
