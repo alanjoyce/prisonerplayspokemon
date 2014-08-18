@@ -2,6 +2,8 @@ import cv2
 import numpy as np
 import os
 import time
+import datetime
+import random
 from time import sleep
 import thread
 import autopy
@@ -11,6 +13,8 @@ c = cv2.VideoCapture(1)
 prevPrevPieces = []
 prevPieces = []
 mov = []
+
+buttons = ["u","d","l","r","a","b","s","e"]
 
 lastPress = time.time()
 lastButton = "u"
@@ -42,6 +46,7 @@ def pressButton(char):
 		for key, value in toPress.iteritems():
 			if value > maxValue:
 				maxKey = key
+				maxValue = value
 		
 		if maxKey == "":
 			maxKey = lastButton
@@ -54,6 +59,7 @@ def pressButton(char):
 		
 		lastPress = time.time()
 		lastButton = maxKey
+		print "max: " + str(maxValue)
 		toPress = {}
 	elif char != "":
 		toPress[char] = toPress.get(char, 0) + 1
@@ -63,6 +69,11 @@ while(1):
 	img = c.read()[1]
 	height, width, depth = img.shape
 	gray = cv2.cvtColor(img, cv2.COLOR_RGB2GRAY)
+	
+	hour = datetime.datetime.now().hour
+	isNight = False
+	if hour > 20 or hour < 6:
+		isNight = True
 	
 	#Get pieces of image
 	pieces = [[0,0,0],[0,0,0],[0,0,0]]
@@ -98,10 +109,18 @@ while(1):
 			d2 = cv2.absdiff(prevPieces[i][j], prevPrevPieces[i][j])
 			result = cv2.bitwise_and(d1, d2)
 			
+			thresh = 90
 			#Use a harsher threshold for the tree
-			thresh = 100
 			if i < 2 and j > 0:
-				thresh = 135
+				if i == 1 and j == 2:
+					thresh = 120
+				else:
+					thresh = 130
+			
+			#At night, go nuts with the threshold
+			if isNight:
+				thresh = 5
+			
 			result = cv2.threshold(result, thresh, 255, cv2.THRESH_BINARY)[1]
 			
 			totalDiff = sum(sum(x) for x in result)
@@ -112,6 +131,11 @@ while(1):
 	ix = ix + 1
 	if ix > len(pieces) - 1:
 		ix = 0
+	
+	#If it's night, press random buttons
+	if isNight:
+		toPress[random.choice(buttons)] = 3
+		cv2.putText(img, "NIGHT MODE: WEIGHTED RANDOM", (width*59/100,height/16), cv2.FONT_HERSHEY_PLAIN, 2, (0,0,255), 3)
 	
 	m = 0
 	#Row 1
@@ -124,19 +148,19 @@ while(1):
 	m = 0
 	
 	if mov[0][1]:
-		pressButton("u")
+		pressButton("l")
 	cv2.rectangle(img, (width/3,0), (width*2/3,height/3), (mov[0][1],0,0), 5)
-	if lastButton == "u":
+	if lastButton == "l":
 		m = 255
-	cv2.putText(img, "U", (width/2, height/6), cv2.FONT_HERSHEY_PLAIN, 3, (255,m,0), 5)
+	cv2.putText(img, "L", (width/2, height/6), cv2.FONT_HERSHEY_PLAIN, 3, (255,m,0), 5)
 	m = 0
 	
 	if mov[0][2]:
-		pressButton("d")
+		pressButton("u")
 	cv2.rectangle(img, (width*2/3,0), (width,height/3), (mov[0][2],0,0), 5)
-	if lastButton == "d":
+	if lastButton == "u":
 		m = 255
-	cv2.putText(img, "D", (width*5/6, height/6), cv2.FONT_HERSHEY_PLAIN, 3, (255,m,0), 5)
+	cv2.putText(img, "U", (width*5/6, height/6), cv2.FONT_HERSHEY_PLAIN, 3, (255,m,0), 5)
 	m = 0
 	
 	#Row 2
@@ -145,23 +169,23 @@ while(1):
 	cv2.rectangle(img, (0,height/3), (width/3,height*2/3), (mov[1][0],0,0), 5)
 	if lastButton == "e":
 		m = 255
-	cv2.putText(img, "SEL", (width/6, height/2), cv2.FONT_HERSHEY_PLAIN, 3, (255,m,0), 5)
+	cv2.putText(img, "SEL", (width/6, height*7/12), cv2.FONT_HERSHEY_PLAIN, 3, (255,m,0), 5)
 	m = 0
 	
 	if mov[1][1]:
-		pressButton("l")
+		pressButton("d")
 	cv2.rectangle(img, (width/3,height/3), (width*2/3,height*2/3), (mov[1][1],0,0), 5)
-	if lastButton == "l":
+	if lastButton == "d":
 		m = 255
-	cv2.putText(img, "L", (width/2, height/2), cv2.FONT_HERSHEY_PLAIN, 3, (255,m,0), 5)
+	cv2.putText(img, "D", (width/2, height/2), cv2.FONT_HERSHEY_PLAIN, 3, (255,m,0), 5)
 	m = 0
 	
 	if mov[1][2]:
-		pressButton("r")
+		pressButton("s")
 	cv2.rectangle(img, (width*2/3,height/3), (width,height*2/3), (mov[1][2],0,0), 5)
-	if lastButton == "r":
+	if lastButton == "s":
 		m = 255
-	cv2.putText(img, "R", (width*5/6, height/2), cv2.FONT_HERSHEY_PLAIN, 3, (255,m,0), 5)
+	cv2.putText(img, "ST", (width*5/6, height/2), cv2.FONT_HERSHEY_PLAIN, 3, (255,m,0), 5)
 	m = 0
 	
 	#Row 3
@@ -182,11 +206,11 @@ while(1):
 	m = 0
 	
 	if mov[2][2]:
-		pressButton("s")
+		pressButton("r")
 	cv2.rectangle(img, (width*2/3,height*2/3), (width,height), (mov[2][2],0,0), 5)
-	if lastButton == "s":
+	if lastButton == "r":
 		m = 255
-	cv2.putText(img, "ST", (width*5/6, height*5/6), cv2.FONT_HERSHEY_PLAIN, 3, (255,m,0), 5)
+	cv2.putText(img, "R", (width*5/6, height*5/6), cv2.FONT_HERSHEY_PLAIN, 3, (255,m,0), 5)
 	m = 0
 	
 	pressButton("")
