@@ -20,6 +20,9 @@ lastPress = time.time()
 lastButton = "u"
 toPress = {}
 
+nightRandom = "u"
+nightRandomCount = 0
+
 def systemKeystroke(char):
 	autopy.key.toggle(char, True)
 	sleep(0.2)
@@ -64,12 +67,13 @@ def pressButton(char):
 		toPress[char] = toPress.get(char, 0) + 1
 
 ix = 0
-while(1):
+while True:
 	img = c.read()[1]
 	height, width, depth = img.shape
 	gray = cv2.cvtColor(img, cv2.COLOR_RGB2GRAY)
 	
 	hour = datetime.datetime.now().hour
+	minute = datetime.datetime.now().minute
 	isNight = False
 	if hour > 20 or hour < 6:
 		isNight = True
@@ -118,12 +122,12 @@ while(1):
 			
 			#At night, go nuts with the threshold
 			if isNight:
-				thresh = 5
+				thresh = 40
 			
 			result = cv2.threshold(result, thresh, 255, cv2.THRESH_BINARY)[1]
 			
 			totalDiff = sum(sum(x) for x in result)
-			if totalDiff > 1000:
+			if totalDiff > 500:
 				mov[i][j] = 255
 			else:
 				mov[i][j] = 0
@@ -133,8 +137,17 @@ while(1):
 	
 	#If it's night, press random buttons
 	if isNight:
-		toPress[random.choice(buttons)] = 3
+		#Every so often, pick a new random
+		if nightRandomCount > 10:
+			nightRandom = random.choice(buttons)
+			nightRandomCount = 0
+		else:
+			nightRandomCount = nightRandomCount + 1
+		toPress[nightRandom] = 3
 		cv2.putText(img, "NIGHT MODE: WEIGHTED RANDOM", (width*59/100,height/16), cv2.FONT_HERSHEY_PLAIN, 2, (0,0,255), 3)
+	
+	#Label the hour, per request
+	cv2.putText(img, str(hour) + ":" + str(minute), (width*9/12,height*37/38), cv2.FONT_HERSHEY_PLAIN, 2, (0,0,255), 3)
 	
 	m = 0
 	#Row 1
