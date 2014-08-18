@@ -59,7 +59,6 @@ def pressButton(char):
 		
 		lastPress = time.time()
 		lastButton = maxKey
-		print "max: " + str(maxValue)
 		toPress = {}
 	elif char != "":
 		toPress[char] = toPress.get(char, 0) + 1
