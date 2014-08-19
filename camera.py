@@ -4,7 +4,6 @@ import os
 import time
 import datetime
 import random
-from time import sleep
 import thread
 import autopy
 
@@ -14,18 +13,31 @@ prevPrevPieces = []
 prevPieces = []
 mov = []
 
-buttons = ["u","d","l","r","a","b","s","e"]
+buttonCoords = {(0,0):"e", (0,1):"u", (0,2):"d", (1,0):"l", (1,1):"r", (1,2):"a", (2,0):"b", (2,1):"s", (2,2):"n"}
+buttons = buttonCoords.values()
+buttonLabels = {"u":"U", "d":"D", "l":"L", "r":"R", "a":"A", "b":"B", "s":"START", "e":"SEL", "n":"RAND"}
 
 lastPress = time.time()
 lastButton = "u"
 toPress = {}
 
-nightRandom = "u"
-nightRandomCount = 0
+lastRandomize = lastPress
+
+def randomizeCoords():
+	global buttonCoords
+	
+	keys = buttonCoords.keys()
+	values = buttonCoords.values()
+	
+	random.shuffle(keys)
+	random.shuffle(values)
+	
+	for i in range(len(keys)):
+		buttonCoords[keys[i]] = values[i]
 
 def systemKeystroke(char):
 	autopy.key.toggle(char, True)
-	sleep(0.2)
+	time.sleep(0.2)
 	autopy.key.toggle(char, False)
 	#cmd = "osascript -e 'tell application \"System Events\" to keystroke \"" + char + "" + char + "" + char + "\"'"
 	#cmd = "osascript -e 'tell application \"System Events\" to key down \"" + char + "\"'"
@@ -51,6 +63,11 @@ def pressButton(char):
 				maxKey = key
 				maxValue = value
 		
+		#If the pressed button is random, shuffle the buttons
+		if maxKey == "n":
+			randomizeCoords()
+			lastButton = ""
+		
 		if maxKey == "":
 			maxKey = lastButton
 		
@@ -72,29 +89,37 @@ while True:
 	height, width, depth = img.shape
 	gray = cv2.cvtColor(img, cv2.COLOR_RGB2GRAY)
 	
-	hour = datetime.datetime.now().hour
-	minute = datetime.datetime.now().minute
+	timeNow = datetime.datetime.now()
 	isNight = False
-	if hour > 20 or hour < 6:
+	if timeNow.hour >= 20 or timeNow.hour < 6:
 		isNight = True
 	
-	#Get pieces of image
+	#Define the sections
+	sections = [[0,0,0],[0,0,0],[0,0,0]]
+
+	sections[0][0] = (0, 0, 33, 33)
+	sections[0][1] = (33, 0, 66, 33)
+	sections[0][2] = (66, 0, 100, 33)
+
+	sections[1][0] = (0, 33, 33, 66)
+	sections[1][1] = (33, 33, 66, 66)
+	sections[1][2] = (66, 33, 100, 66)
+	
+	sections[2][0] = (0, 66, 33, 100)
+	sections[2][1] = (33, 66, 66, 100)
+	sections[2][2] = (66, 66, 100, 100)
+	
+	#Get pieces of image for each section
 	pieces = [[0,0,0],[0,0,0],[0,0,0]]
-	
-	#Row 1
-	pieces[0][0] = gray[0:height/3, 0:width/3]
-	pieces[0][1] = gray[0:height/3, width/3:width*2/3]
-	pieces[0][2] = gray[0:height/3, width*2/3:width]
-	
-	#Row 2
-	pieces[1][0] = gray[height/3:height*2/3, 0:width/3]
-	pieces[1][1] = gray[height/3:height*2/3, width/3:width*2/3]
-	pieces[1][2] = gray[height/3:height*2/3, width*2/3:width]
-	
-	#Row 3
-	pieces[2][0] = gray[height*2/3:height, 0:width/3]
-	pieces[2][1] = gray[height*2/3:height, width/3:width*2/3]
-	pieces[2][2] = gray[height*2/3:height, width*2/3:width]
+	for i in range(len(sections)):
+		for j in range(len(sections[i])):
+			#Convert section coordinates from percentage to pixels
+			x1, y1, x2, y2 = sections[i][j]
+			sections[i][j] = (width*x1/100, height*y1/100, width*x2/100, height*y2/100)
+			
+			#Create the image piece based on the section
+			x1, y1, x2, y2 = sections[i][j]
+			pieces[i][j] = gray[y1:y2, x1:x2]
 	
 	#Initialize prevPieces if needed
 	if len(prevPieces) == 0:
@@ -112,22 +137,19 @@ while True:
 			d2 = cv2.absdiff(prevPieces[i][j], prevPrevPieces[i][j])
 			result = cv2.bitwise_and(d1, d2)
 			
-			thresh = 90
-			#Use a harsher threshold for the tree
-			if i < 2 and j > 0:
-				if i == 1 and j == 2:
-					thresh = 120
-				else:
-					thresh = 130
+			#Define motion threshold and total section difference requirement
+			thresh = 110
+			diffReq = 1000
 			
-			#At night, go nuts with the threshold
+			#At night, go nuts with the threshold and diffReq
 			if isNight:
 				thresh = 40
+				diffReq = 400
 			
 			result = cv2.threshold(result, thresh, 255, cv2.THRESH_BINARY)[1]
 			
 			totalDiff = sum(sum(x) for x in result)
-			if totalDiff > 500:
+			if totalDiff > 1000:
 				mov[i][j] = 255
 			else:
 				mov[i][j] = 0
@@ -135,97 +157,35 @@ while True:
 	if ix > len(pieces) - 1:
 		ix = 0
 	
-	#If it's night, press random buttons
-	if isNight:
-		#Every so often, pick a new random
-		if nightRandomCount > 10:
-			nightRandom = random.choice(buttons)
-			nightRandomCount = 0
-		else:
-			nightRandomCount = nightRandomCount + 1
-		toPress[nightRandom] = 3
-		cv2.putText(img, "NIGHT MODE: WEIGHTED RANDOM", (width*59/100,height/16), cv2.FONT_HERSHEY_PLAIN, 2, (0,0,255), 3)
+	#Draw each square
+	for i in range(len(sections)):
+		for j in range(len(sections[i])):
+			thisButton = buttonCoords[(i,j)]
+			if mov[i][j]:
+				pressButton(thisButton)
+			x1, y1, x2, y2 = sections[i][j]
+			cv2.rectangle(img, (x1, y1), (x2, y2), (mov[i][j],0,0), 5)
+			m = 0
+			if lastButton == thisButton:
+				m = 255
+			cv2.putText(img, buttonLabels[thisButton], (x1+(x2-x1)/3, y1+(y2-y1)/2), cv2.FONT_HERSHEY_PLAIN, 3, (255,m,0), 5)
 	
 	#Label the hour, per request
-	cv2.putText(img, str(hour) + ":" + str(minute), (width*9/12,height*37/38), cv2.FONT_HERSHEY_PLAIN, 2, (0,0,255), 3)
+	cv2.putText(img, str(timeNow.month) + "/" + str(timeNow.day) + " " + str(timeNow.hour) + ":" + str(timeNow.minute), (width*17/24,height*37/38), cv2.FONT_HERSHEY_PLAIN, 2, (0,0,255), 3)
 	
-	m = 0
-	#Row 1
-	if mov[0][0]:
-		pressButton("")
-	cv2.rectangle(img, (0,0), (width/3,height/3), (mov[0][0],0,0), 5)
-	if lastButton == "":
-		m = 255
-	cv2.putText(img, "", (width/6, height/6), cv2.FONT_HERSHEY_PLAIN, 3, (255,m,0), 5)
-	m = 0
+	#Explain night mode
+	if isNight:
+		cv2.putText(img, "NIGHT MODE: LOW THRESHOLD", (width*59/100,height/16), cv2.FONT_HERSHEY_PLAIN, 2, (0,0,255), 3)
 	
-	if mov[0][1]:
-		pressButton("l")
-	cv2.rectangle(img, (width/3,0), (width*2/3,height/3), (mov[0][1],0,0), 5)
-	if lastButton == "l":
-		m = 255
-	cv2.putText(img, "L", (width/2, height/6), cv2.FONT_HERSHEY_PLAIN, 3, (255,m,0), 5)
-	m = 0
+	#Randomize every 60 minutes during the day and every 10 minutes at night.
+	randInterval = 60*60
+	if isNight:
+		randInterval = 60*10
 	
-	if mov[0][2]:
-		pressButton("u")
-	cv2.rectangle(img, (width*2/3,0), (width,height/3), (mov[0][2],0,0), 5)
-	if lastButton == "u":
-		m = 255
-	cv2.putText(img, "U", (width*5/6, height/6), cv2.FONT_HERSHEY_PLAIN, 3, (255,m,0), 5)
-	m = 0
-	
-	#Row 2
-	if mov[1][0]:
-		pressButton("e")
-	cv2.rectangle(img, (0,height/3), (width/3,height*2/3), (mov[1][0],0,0), 5)
-	if lastButton == "e":
-		m = 255
-	cv2.putText(img, "SEL", (width/6, height*7/12), cv2.FONT_HERSHEY_PLAIN, 3, (255,m,0), 5)
-	m = 0
-	
-	if mov[1][1]:
-		pressButton("d")
-	cv2.rectangle(img, (width/3,height/3), (width*2/3,height*2/3), (mov[1][1],0,0), 5)
-	if lastButton == "d":
-		m = 255
-	cv2.putText(img, "D", (width/2, height/2), cv2.FONT_HERSHEY_PLAIN, 3, (255,m,0), 5)
-	m = 0
-	
-	if mov[1][2]:
-		pressButton("s")
-	cv2.rectangle(img, (width*2/3,height/3), (width,height*2/3), (mov[1][2],0,0), 5)
-	if lastButton == "s":
-		m = 255
-	cv2.putText(img, "ST", (width*5/6, height/2), cv2.FONT_HERSHEY_PLAIN, 3, (255,m,0), 5)
-	m = 0
-	
-	#Row 3
-	if mov[2][0]:
-		pressButton("a")
-	cv2.rectangle(img, (0,height*2/3), (width/3,height), (mov[2][0],0,0), 5)
-	if lastButton == "a":
-		m = 255
-	cv2.putText(img, "A", (width/6, height*5/6), cv2.FONT_HERSHEY_PLAIN, 3, (255,m,0), 5)
-	m = 0
-	
-	if mov[2][1]:
-		pressButton("b")
-	cv2.rectangle(img, (width/3,height*2/3), (width*2/3,height), (mov[2][1],0,0), 5)
-	if lastButton == "b":
-		m = 255
-	cv2.putText(img, "B", (width/2, height*5/6), cv2.FONT_HERSHEY_PLAIN, 3, (255,m,0), 5)
-	m = 0
-	
-	if mov[2][2]:
-		pressButton("r")
-	cv2.rectangle(img, (width*2/3,height*2/3), (width,height), (mov[2][2],0,0), 5)
-	if lastButton == "r":
-		m = 255
-	cv2.putText(img, "R", (width*5/6, height*5/6), cv2.FONT_HERSHEY_PLAIN, 3, (255,m,0), 5)
-	m = 0
-	
-	pressButton("")
+	#Randomize every hour
+	if time.time() > lastRandomize + randInterval:
+		randomizeCoords()
+		lastRandomize = time.time()
 	
 	#Update previousPieces
 	prevPrevPieces = prevPieces
