@@ -97,17 +97,17 @@ while True:
 	#Define the sections
 	sections = [[0,0,0],[0,0,0],[0,0,0]]
 
-	sections[0][0] = (0, 0, 33, 33)
-	sections[0][1] = (33, 0, 66, 33)
-	sections[0][2] = (66, 0, 100, 33)
+	sections[0][0] = (0, 0, 15, 50)
+	sections[0][1] = (15, 0, 30, 50)
+	sections[0][2] = (30, 0, 100, 33)
 
-	sections[1][0] = (0, 33, 33, 66)
-	sections[1][1] = (33, 33, 66, 66)
-	sections[1][2] = (66, 33, 100, 66)
+	sections[1][0] = (30, 33, 55, 60)
+	sections[1][1] = (55, 33, 75, 60)
+	sections[1][2] = (75, 33, 100, 70)
 	
-	sections[2][0] = (0, 66, 33, 100)
-	sections[2][1] = (33, 66, 66, 100)
-	sections[2][2] = (66, 66, 100, 100)
+	sections[2][0] = (30, 60, 55, 100)
+	sections[2][1] = (55, 60, 75, 100)
+	sections[2][2] = (75, 70, 100, 100)
 	
 	#Get pieces of image for each section
 	pieces = [[0,0,0],[0,0,0],[0,0,0]]
@@ -164,18 +164,20 @@ while True:
 			if mov[i][j]:
 				pressButton(thisButton)
 			x1, y1, x2, y2 = sections[i][j]
-			cv2.rectangle(img, (x1, y1), (x2, y2), (mov[i][j],0,0), 5)
+			cv2.rectangle(img, (x1, y1), (x2-2, y2-2), (mov[i][j],0,0), 3)
 			m = 0
 			if lastButton == thisButton:
 				m = 255
-			cv2.putText(img, buttonLabels[thisButton], (x1+(x2-x1)/3, y1+(y2-y1)/2), cv2.FONT_HERSHEY_PLAIN, 3, (255,m,0), 5)
+			cv2.putText(img, buttonLabels[thisButton], (x1+20, y2-25), cv2.FONT_HERSHEY_PLAIN, 3, (255,m,0), 5)
 	
 	#Label the hour, per request
-	cv2.putText(img, str(timeNow.month) + "/" + str(timeNow.day) + " " + str(timeNow.hour) + ":" + str(timeNow.minute), (width*17/24,height*37/38), cv2.FONT_HERSHEY_PLAIN, 2, (0,0,255), 3)
+	cv2.putText(img, str(timeNow.month) + "/" + str(timeNow.day) + " " + str(timeNow.hour) + ":" + str(timeNow.minute), (width*59/100,height*5/100), cv2.FONT_HERSHEY_PLAIN, 2, (0,0,255), 3)
 	
 	#Explain night mode
 	if isNight:
-		cv2.putText(img, "NIGHT MODE: LOW THRESHOLD", (width*59/100,height/16), cv2.FONT_HERSHEY_PLAIN, 2, (0,0,255), 3)
+		cv2.putText(img, "NIGHT MODE: LOW THRESHOLD", (width*59/100,height*10/100), cv2.FONT_HERSHEY_PLAIN, 2, (0,0,255), 3)
+	
+	pressButton("")
 	
 	#Randomize every 60 minutes during the day and every 10 minutes at night.
 	randInterval = 60*60
