@@ -101,13 +101,13 @@ while True:
 	sections[0][1] = (15, 0, 30, 50)
 	sections[0][2] = (30, 0, 100, 33)
 
-	sections[1][0] = (30, 33, 55, 60)
-	sections[1][1] = (55, 33, 75, 60)
-	sections[1][2] = (75, 33, 100, 70)
+	sections[1][0] = (30, 33, 55, 55)
+	sections[1][1] = (55, 33, 75, 55)
+	sections[1][2] = (75, 33, 100, 65)
 	
-	sections[2][0] = (30, 60, 55, 100)
-	sections[2][1] = (55, 60, 75, 100)
-	sections[2][2] = (75, 70, 100, 100)
+	sections[2][0] = (30, 55, 55, 100)
+	sections[2][1] = (55, 55, 75, 100)
+	sections[2][2] = (75, 65, 100, 100)
 	
 	#Get pieces of image for each section
 	pieces = [[0,0,0],[0,0,0],[0,0,0]]
@@ -177,7 +177,8 @@ while True:
 	if isNight:
 		cv2.putText(img, "NIGHT MODE: LOW THRESHOLD", (width*59/100,height*10/100), cv2.FONT_HERSHEY_PLAIN, 2, (0,0,255), 3)
 	
-	pressButton("")
+	#Comment this out to stop repeating of button presses
+	#pressButton("")
 	
 	#Randomize every 60 minutes during the day and every 10 minutes at night.
 	randInterval = 60*60
